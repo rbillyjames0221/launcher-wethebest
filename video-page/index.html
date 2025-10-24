@@ -125,11 +125,11 @@
 
     // Simple autoplay setup with better error handling
     function tryAutoplay() {
-      video.play().then(() => {
+      video.play().then(function() {
         // Success - hide play overlay
         playOverlay.style.display = 'none';
         if (message) message.style.display = 'none';
-      }).catch(error => {
+      }).catch(function(error) {
         // Autoplay failed - show play overlay and message
         console.log('Autoplay blocked, user interaction required');
         playOverlay.style.display = 'block';
@@ -147,20 +147,20 @@
     video.addEventListener('canplay', tryAutoplay);
 
     // Hide play overlay when video starts playing
-    video.addEventListener('playing', () => {
+    video.addEventListener('playing', function() {
       playOverlay.style.display = 'none';
       if (message) message.style.display = 'none';
     });
 
     // Show play overlay when video is paused
-    video.addEventListener('pause', () => {
+    video.addEventListener('pause', function() {
       playOverlay.style.display = 'block';
     });
 
     // Click video to toggle play/pause
-    video.addEventListener('click', () => {
+    video.addEventListener('click', function() {
       if (video.paused) {
-        video.play().catch(e => {
+        video.play().catch(function(e) {
           console.log('Play failed:', e);
         });
       } else {
@@ -169,11 +169,13 @@
     });
 
     // Keyboard accessibility: space toggles play
-    video.addEventListener('keydown', (ev) => {
+    video.addEventListener('keydown', function(ev) {
       if (ev.code === 'Space') {
         ev.preventDefault();
         if (video.paused) {
-          video.play().catch(e => console.log('Play failed:', e));
+          video.play().catch(function(e) {
+            console.log('Play failed:', e);
+          });
         } else {
           video.pause();
         }
