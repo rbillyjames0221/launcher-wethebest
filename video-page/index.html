@@ -103,9 +103,9 @@
   <div class="play-overlay" id="playOverlay" aria-hidden="true">►</div>
 
 
-  <!-- Accessibility message for no-JS -->
+  <!-- Simple click to play message -->
   <div class="no-js-message">
-    JavaScript recommended for best behavior
+    Click to play video
   </div>
 </div>
 
@@ -116,20 +116,40 @@
     // Elements
     const video = document.getElementById('heroVideo');
     const playOverlay = document.getElementById('playOverlay');
+    const message = document.querySelector('.no-js-message');
 
-    // Simple autoplay setup
-    video.addEventListener('loadeddata', () => {
-      // Try to play the video
-      video.play().catch(e => {
-        console.warn('Autoplay prevented:', e);
-        // Show play overlay if autoplay fails
+    // Hide message immediately when JS loads
+    if (message) {
+      message.style.display = 'none';
+    }
+
+    // Simple autoplay setup with better error handling
+    function tryAutoplay() {
+      video.play().then(() => {
+        // Success - hide play overlay
+        playOverlay.style.display = 'none';
+        if (message) message.style.display = 'none';
+      }).catch(error => {
+        // Autoplay failed - show play overlay and message
+        console.log('Autoplay blocked, user interaction required');
         playOverlay.style.display = 'block';
+        if (message) {
+          message.style.display = 'block';
+          message.textContent = 'Click to play video';
+        }
       });
-    });
+    }
+
+    // Try autoplay when video is ready
+    video.addEventListener('loadeddata', tryAutoplay);
+    
+    // Also try when video can play
+    video.addEventListener('canplay', tryAutoplay);
 
     // Hide play overlay when video starts playing
     video.addEventListener('playing', () => {
       playOverlay.style.display = 'none';
+      if (message) message.style.display = 'none';
     });
 
     // Show play overlay when video is paused
@@ -137,10 +157,12 @@
       playOverlay.style.display = 'block';
     });
 
-    // Click video to toggle play/pause (simple interaction)
+    // Click video to toggle play/pause
     video.addEventListener('click', () => {
       if (video.paused) {
-        video.play().catch(e => console.warn('Play prevented:', e));
+        video.play().catch(e => {
+          console.log('Play failed:', e);
+        });
       } else {
         video.pause();
       }
@@ -151,12 +173,17 @@
       if (ev.code === 'Space') {
         ev.preventDefault();
         if (video.paused) {
-          video.play().catch(e => console.warn('Play prevented:', e));
+          video.play().catch(e => console.log('Play failed:', e));
         } else {
           video.pause();
         }
       }
     });
+
+    // Initial state - try autoplay immediately if video is ready
+    if (video.readyState >= 2) {
+      tryAutoplay();
+    }
   </script>
 </body>
 </html>
