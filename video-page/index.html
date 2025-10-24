@@ -35,32 +35,6 @@
       background: #111;
     }
 
-    /* Overlay controls area (minimal) */
-    .overlay {
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 20px;
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      z-index: 5;
-      pointer-events: none; /* allow clicks through except buttons */
-    }
-
-    .btn {
-      pointer-events: auto;
-      background: rgba(0,0,0,0.5);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,0.12);
-      padding: 8px 12px;
-      border-radius: 8px;
-      backdrop-filter: blur(4px);
-      cursor: pointer;
-      font-size: 14px;
-    }
-
-    .btn:active { transform: translateY(1px); }
 
     /* Small hint centered */
     .hint {
@@ -109,24 +83,31 @@
 </head>
 <body class="no-js">
 
-<video id="heroVideo"
-       poster="media/poster.jpg"
-       preload="metadata"
-       autoplay
-       muted
-       loop
-       playsinline
-       webkit-playsinline
-       tabindex="0"
-       aria-label="Hero video autoplay placeholder">
-  <source src="media/video.mp4" type="video/mp4">
-  <source src="media/video.webm" type="video/webm">
-  Your browser does not support the HTML5 video element.
-</video>
+<div class="video-wrap" id="videoWrap">
+  <video id="heroVideo"
+         poster="media/poster.jpg"
+         preload="metadata"
+         autoplay
+         muted
+         loop
+         playsinline
+         webkit-playsinline
+         tabindex="0"
+         aria-label="Hero video autoplay placeholder">
+    <source src="media/video.mp4" type="video/mp4">
+    <source src="media/video.webm" type="video/webm">
+    Your browser does not support the HTML5 video element.
+  </video>
 
-    <!-- Center play icon when paused -->
-    <div class="play-overlay" id="playOverlay" aria-hidden="true">►</div>
+  <!-- Center play icon when paused -->
+  <div class="play-overlay" id="playOverlay" aria-hidden="true">►</div>
+
+
+  <!-- Accessibility message for no-JS -->
+  <div class="no-js-message">
+    JavaScript recommended for best behavior
   </div>
+</div>
 
   <script>
     // Remove no-js class so message hides
@@ -134,97 +115,48 @@
 
     // Elements
     const video = document.getElementById('heroVideo');
-    const playBtn = document.getElementById('playBtn');
-    const muteBtn = document.getElementById('muteBtn');
-    const fullscreenBtn = document.getElementById('fullscreenBtn');
-    const wrap = document.getElementById('videoWrap');
     const playOverlay = document.getElementById('playOverlay');
 
-    // Helper: update UI states
-    function updateUI() {
-      if (video.paused) {
-        playBtn.textContent = 'Play';
-        playBtn.setAttribute('aria-pressed', 'false');
-        wrap.classList.add('paused');
-      } else {
-        playBtn.textContent = 'Pause';
-        playBtn.setAttribute('aria-pressed', 'true');
-        wrap.classList.remove('paused');
-      }
-      muteBtn.textContent = video.muted ? 'Muted' : 'Unmuted';
-      muteBtn.setAttribute('aria-pressed', String(video.muted));
-    }
+    // Simple autoplay setup
+    video.addEventListener('loadeddata', () => {
+      // Try to play the video
+      video.play().catch(e => {
+        console.warn('Autoplay prevented:', e);
+        // Show play overlay if autoplay fails
+        playOverlay.style.display = 'block';
+      });
+    });
 
-    // Toggle play/pause
-    function togglePlay() {
+    // Hide play overlay when video starts playing
+    video.addEventListener('playing', () => {
+      playOverlay.style.display = 'none';
+    });
+
+    // Show play overlay when video is paused
+    video.addEventListener('pause', () => {
+      playOverlay.style.display = 'block';
+    });
+
+    // Click video to toggle play/pause (simple interaction)
+    video.addEventListener('click', () => {
       if (video.paused) {
-        // Try to play (autoplay might be blocked unless muted)
-        video.play().catch(e => {
-          // If autoplay blocked and unmuted, try muting then play
-          console.warn('Play prevented:', e);
-        });
+        video.play().catch(e => console.warn('Play prevented:', e));
       } else {
         video.pause();
       }
-      updateUI();
-    }
-
-    // Click video to toggle
-    video.addEventListener('click', togglePlay);
-
-    // Keyboard accessibility: space toggles play, m toggles mute
-    video.addEventListener('keydown', (ev) => {
-      if (ev.code === 'Space') { ev.preventDefault(); togglePlay(); }
-      if (ev.key.toLowerCase() === 'm') { toggleMute(); }
     });
 
-    playBtn.addEventListener('click', togglePlay);
-
-    function toggleMute() {
-      video.muted = !video.muted;
-      updateUI();
-    }
-    muteBtn.addEventListener('click', toggleMute);
-
-    fullscreenBtn.addEventListener('click', () => {
-      if (document.fullscreenElement) {
-        document.exitFullscreen().catch(()=>{});
-      } else {
-        wrap.requestFullscreen?.().catch(()=>{});
+    // Keyboard accessibility: space toggles play
+    video.addEventListener('keydown', (ev) => {
+      if (ev.code === 'Space') {
+        ev.preventDefault();
+        if (video.paused) {
+          video.play().catch(e => console.warn('Play prevented:', e));
+        } else {
+          video.pause();
+        }
       }
     });
-
-    // Update UI when play/pause/mute change
-    video.addEventListener('play', updateUI);
-    video.addEventListener('pause', updateUI);
-    video.addEventListener('volumechange', updateUI);
-
-    // If the video is looped & muted by default, we can auto-play on user gesture.
-    // Leave commented: if you want it to autoplay where allowed, uncomment.
-    // video.muted = true;
-    // video.play().catch(()=>{/* autoplay might be blocked */});
-
-    // Initial UI state
-    updateUI();
-
-    // Accessibility: announce actions
-    function speakHint(msg) {
-      // Simple polite live region update (aria-live container already present)
-      const live = document.createElement('div');
-      live.style.position = 'absolute';
-      live.style.left = '-9999px';
-      live.setAttribute('role','status');
-      live.textContent = msg;
-      document.body.appendChild(live);
-      setTimeout(()=> document.body.removeChild(live), 1000);
-    }
-
-    // Optional: show play overlay state (visual)
-    video.addEventListener('playing', () => playOverlay.style.display = 'none');
-    video.addEventListener('pause', () => playOverlay.style.display = 'block');
-
-    // Show overlay initially if paused (poster visible)
-    if (video.paused) playOverlay.style.display = 'block';
   </script>
 </body>
 </html>
