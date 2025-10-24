@@ -16,7 +16,7 @@
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
     }
 
-    /* Container takes full viewport like your carousel */
+    /* Container takes full viewport */
     .video-wrap {
       width: 100vw;
       height: 100vh;
@@ -26,7 +26,7 @@
       background: #000;
     }
 
-    /* The video is sized to cover the container similar to object-fit: cover */
+    /* The video is sized to cover the container */
     video {
       width: 100%;
       height: 100%;
@@ -35,24 +35,8 @@
       background: #111;
     }
 
-
-    /* Small hint centered */
-    .hint {
-      position: absolute;
-      top: 16px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: rgba(255,255,255,0.9);
-      background: rgba(0,0,0,0.35);
-      padding: 6px 10px;
-      border-radius: 8px;
-      font-size: 13px;
-      z-index: 5;
-    }
-
-    /* Accessibility: show when JS disabled */
-    .no-js-message {
-      display: none;
+    /* Simple message */
+    .message {
       position: absolute;
       z-index: 10;
       color: #fff;
@@ -63,29 +47,14 @@
       padding: 18px;
       border-radius: 8px;
       text-align: center;
+      font-size: 14px;
     }
-    .no-js .no-js-message { display: block; }
-
-    /* Small play icon overlay center when paused */
-    .play-overlay {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 4;
-      pointer-events: none;
-      font-size: 48px;
-      color: rgba(255,255,255,0.9);
-      display: none;
-    }
-    .paused .play-overlay { display: block; }
   </style>
 </head>
-<body class="no-js">
+<body>
 
-<div class="video-wrap" id="videoWrap">
+<div class="video-wrap">
   <video id="heroVideo"
-         poster="media/poster.jpg"
          preload="metadata"
          autoplay
          muted
@@ -99,79 +68,10 @@
     Your browser does not support the HTML5 video element.
   </video>
 
-  <!-- Center play icon when paused -->
-  <div class="play-overlay" id="playOverlay" aria-hidden="true">►</div>
-
-
-  <!-- Simple click to play message -->
-  <div class="no-js-message">
-    Click to play video
+  <div class="message">
+    Click video to play/pause
   </div>
 </div>
 
-  <script>
-    // Remove no-js class
-    document.body.className = document.body.className.replace('no-js', '');
-
-    // Get elements
-    var video = document.getElementById('heroVideo');
-    var playOverlay = document.getElementById('playOverlay');
-    var message = document.getElementsByClassName('no-js-message')[0];
-
-    // Hide message
-    if (message) {
-      message.style.display = 'none';
-    }
-
-    // Try to play video
-    function playVideo() {
-      try {
-        video.play();
-      } catch(e) {
-        // Ignore errors
-      }
-    }
-
-    // Try to pause video
-    function pauseVideo() {
-      try {
-        video.pause();
-      } catch(e) {
-        // Ignore errors
-      }
-    }
-
-    // Hide overlays when playing
-    function hideOverlays() {
-      if (playOverlay) playOverlay.style.display = 'none';
-      if (message) message.style.display = 'none';
-    }
-
-    // Show overlays when paused
-    function showOverlays() {
-      if (playOverlay) playOverlay.style.display = 'block';
-    }
-
-    // Click handler
-    function handleClick() {
-      if (video.paused) {
-        playVideo();
-      } else {
-        pauseVideo();
-      }
-    }
-
-    // Add event listeners
-    if (video) {
-      video.onloadeddata = playVideo;
-      video.oncanplay = playVideo;
-      video.onplaying = hideOverlays;
-      video.onpause = showOverlays;
-      video.onclick = handleClick;
-    }
-
-    // Try autoplay now
-    setTimeout(playVideo, 100);
-  </script>
 </body>
 </html>
