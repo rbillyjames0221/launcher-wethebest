@@ -114,73 +114,71 @@
     document.body.classList.remove('no-js');
 
     // Elements
-    const video = document.getElementById('heroVideo');
-    const playOverlay = document.getElementById('playOverlay');
-    const message = document.querySelector('.no-js-message');
+    var video = document.getElementById('heroVideo');
+    var playOverlay = document.getElementById('playOverlay');
+    var message = document.querySelector('.no-js-message');
 
     // Hide message immediately when JS loads
     if (message) {
       message.style.display = 'none';
     }
 
-    // Simple autoplay setup with better error handling
+    // Simple autoplay function
     function tryAutoplay() {
-      video.play().then(function() {
-        // Success - hide play overlay
-        playOverlay.style.display = 'none';
+      if (video.play) {
+        video.play();
+        if (playOverlay) playOverlay.style.display = 'none';
         if (message) message.style.display = 'none';
-      }).catch(function(error) {
-        // Autoplay failed - show play overlay and message
-        console.log('Autoplay blocked, user interaction required');
-        playOverlay.style.display = 'block';
-        if (message) {
-          message.style.display = 'block';
-          message.textContent = 'Click to play video';
-        }
-      });
+      }
+    }
+
+    // Simple play function
+    function playVideo() {
+      if (video.play) {
+        video.play();
+      }
+    }
+
+    // Simple pause function
+    function pauseVideo() {
+      if (video.pause) {
+        video.pause();
+      }
     }
 
     // Try autoplay when video is ready
-    video.addEventListener('loadeddata', tryAutoplay);
-    
-    // Also try when video can play
-    video.addEventListener('canplay', tryAutoplay);
+    if (video.addEventListener) {
+      video.addEventListener('loadeddata', tryAutoplay);
+      video.addEventListener('canplay', tryAutoplay);
+      
+      video.addEventListener('playing', function() {
+        if (playOverlay) playOverlay.style.display = 'none';
+        if (message) message.style.display = 'none';
+      });
 
-    // Hide play overlay when video starts playing
-    video.addEventListener('playing', function() {
-      playOverlay.style.display = 'none';
-      if (message) message.style.display = 'none';
-    });
+      video.addEventListener('pause', function() {
+        if (playOverlay) playOverlay.style.display = 'block';
+      });
 
-    // Show play overlay when video is paused
-    video.addEventListener('pause', function() {
-      playOverlay.style.display = 'block';
-    });
-
-    // Click video to toggle play/pause
-    video.addEventListener('click', function() {
-      if (video.paused) {
-        video.play().catch(function(e) {
-          console.log('Play failed:', e);
-        });
-      } else {
-        video.pause();
-      }
-    });
-
-    // Keyboard accessibility: space toggles play
-    video.addEventListener('keydown', function(ev) {
-      if (ev.code === 'Space') {
-        ev.preventDefault();
+      video.addEventListener('click', function() {
         if (video.paused) {
-          video.play().catch(function(e) {
-            console.log('Play failed:', e);
-          });
+          playVideo();
         } else {
-          video.pause();
+          pauseVideo();
         }
-      }
-    });
+      });
+
+      video.addEventListener('keydown', function(ev) {
+        if (ev.keyCode === 32) { // Space key
+          ev.preventDefault();
+          if (video.paused) {
+            playVideo();
+          } else {
+            pauseVideo();
+          }
+        }
+      });
+    }
 
     // Initial state - try autoplay immediately if video is ready
     if (video.readyState >= 2) {
