@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Full-viewport Video Placeholder</title>
+  <style>
+    /* Reset */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+
+    /* Container takes full viewport like your carousel */
+    .video-wrap {
+      width: 100vw;
+      height: 100vh;
+      display: grid;
+      place-items: center;
+      position: relative;
+      background: #000;
+    }
+
+    /* The video is sized to cover the container similar to object-fit: cover */
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      background: #111;
+    }
+
+    /* Overlay controls area (minimal) */
+    .overlay {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      z-index: 5;
+      pointer-events: none; /* allow clicks through except buttons */
+    }
+
+    .btn {
+      pointer-events: auto;
+      background: rgba(0,0,0,0.5);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 8px 12px;
+      border-radius: 8px;
+      backdrop-filter: blur(4px);
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .btn:active { transform: translateY(1px); }
+
+    /* Small hint centered */
+    .hint {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.9);
+      background: rgba(0,0,0,0.35);
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      z-index: 5;
+    }
+
+    /* Accessibility: show when JS disabled */
+    .no-js-message {
+      display: none;
+      position: absolute;
+      z-index: 10;
+      color: #fff;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.6);
+      padding: 18px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .no-js .no-js-message { display: block; }
+
+    /* Small play icon overlay center when paused */
+    .play-overlay {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 4;
+      pointer-events: none;
+      font-size: 48px;
+      color: rgba(255,255,255,0.9);
+      display: none;
+    }
+    .paused .play-overlay { display: block; }
+  </style>
+</head>
+<body class="no-js">
+  <div class="no-js-message">
+    <h3>JavaScript recommended</h3>
+    <p>For best behavior (click to play/pause) enable JavaScript.</p>
+  </div>
+
+  <div class="video-wrap" id="videoWrap" aria-live="polite">
+    <div class="hint">Click video to play / pause — controls are also available</div>
+
+<video id="heroVideo"
+       poster="media/poster.jpg"
+       preload="metadata"
+       autoplay
+       muted
+       loop
+       playsinline
+       webkit-playsinline
+       tabindex="0"
+       aria-label="Hero video autoplay placeholder">
+  <source src="media/video.mp4" type="video/mp4">
+  <source src="media/video.webm" type="video/webm">
+  Your browser does not support the HTML5 video element.
+</video>
+
+    <!-- Center play icon when paused -->
+    <div class="play-overlay" id="playOverlay" aria-hidden="true">►</div>
+  </div>
+
+  <script>
+    // Remove no-js class so message hides
+    document.body.classList.remove('no-js');
+
+    // Elements
+    const video = document.getElementById('heroVideo');
+    const playBtn = document.getElementById('playBtn');
+    const muteBtn = document.getElementById('muteBtn');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const wrap = document.getElementById('videoWrap');
+    const playOverlay = document.getElementById('playOverlay');
+
+    // Helper: update UI states
+    function updateUI() {
+      if (video.paused) {
+        playBtn.textContent = 'Play';
+        playBtn.setAttribute('aria-pressed', 'false');
+        wrap.classList.add('paused');
+      } else {
+        playBtn.textContent = 'Pause';
+        playBtn.setAttribute('aria-pressed', 'true');
+        wrap.classList.remove('paused');
+      }
+      muteBtn.textContent = video.muted ? 'Muted' : 'Unmuted';
+      muteBtn.setAttribute('aria-pressed', String(video.muted));
+    }
+
+    // Toggle play/pause
+    function togglePlay() {
+      if (video.paused) {
+        // Try to play (autoplay might be blocked unless muted)
+        video.play().catch(e => {
+          // If autoplay blocked and unmuted, try muting then play
+          console.warn('Play prevented:', e);
+        });
+      } else {
+        video.pause();
+      }
+      updateUI();
+    }
+
+    // Click video to toggle
+    video.addEventListener('click', togglePlay);
+
+    // Keyboard accessibility: space toggles play, m toggles mute
+    video.addEventListener('keydown', (ev) => {
+      if (ev.code === 'Space') { ev.preventDefault(); togglePlay(); }
+      if (ev.key.toLowerCase() === 'm') { toggleMute(); }
+    });
+
+    playBtn.addEventListener('click', togglePlay);
+
+    function toggleMute() {
+      video.muted = !video.muted;
+      updateUI();
+    }
+    muteBtn.addEventListener('click', toggleMute);
+
+    fullscreenBtn.addEventListener('click', () => {
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(()=>{});
+      } else {
+        wrap.requestFullscreen?.().catch(()=>{});
+      }
+    });
+
+    // Update UI when play/pause/mute change
+    video.addEventListener('play', updateUI);
+    video.addEventListener('pause', updateUI);
+    video.addEventListener('volumechange', updateUI);
+
+    // If the video is looped & muted by default, we can auto-play on user gesture.
+    // Leave commented: if you want it to autoplay where allowed, uncomment.
+    // video.muted = true;
+    // video.play().catch(()=>{/* autoplay might be blocked */});
+
+    // Initial UI state
+    updateUI();
+
+    // Accessibility: announce actions
+    function speakHint(msg) {
+      // Simple polite live region update (aria-live container already present)
+      const live = document.createElement('div');
+      live.style.position = 'absolute';
+      live.style.left = '-9999px';
+      live.setAttribute('role','status');
+      live.textContent = msg;
+      document.body.appendChild(live);
+      setTimeout(()=> document.body.removeChild(live), 1000);
+    }
+
+    // Optional: show play overlay state (visual)
+    video.addEventListener('playing', () => playOverlay.style.display = 'none');
+    video.addEventListener('pause', () => playOverlay.style.display = 'block');
+
+    // Show overlay initially if paused (poster visible)
+    if (video.paused) playOverlay.style.display = 'block';
+  </script>
+</body>
+</html>
